@@ -221,7 +221,7 @@ DataJson = PlaintextCorpusReader(corpus_root,'.*truth')
 fileTest = DataCorpus.open('problem-1.txt')
 text = fileTest.read()
 fileTest.close()
-# print(text)
+print(text)
 # print(len(text))
 class LangVars(PunktLanguageVars):
     sent_end_chars = ('.', '?', '!', '...', '-', '.)', '\n\n')
@@ -233,15 +233,21 @@ targetV = arrayzero(text, jdata, sentences)
 counterpunc = punctt(sentences)
 postag = postagg(sentences)
 #ctrl+/ untuk comment atau uncomment
+#1-gram
 # sorted_dict, result = freqWordDoc(cleanText, 1)
 # senResult =  freqWordSent(cleanText, 1)
 # wfa = wordFreq(result, sorted_dict, cleanText, senResult, 1)
+
+#3-gram
 sorted_dict, result = freqWordDoc(cleanText, 3)
 senResult =  freqWordSent(cleanText, 3)
 wfa = wordFreq(result, sorted_dict, cleanText, senResult, 3)
+
+#4-gram
 # sorted_dict, result = freqWordDoc(cleanText, 4)
 # senResult =  freqWordSent(cleanText, 4)
 # wfa = wordFre q(result, sorted_dict, cleanText, senResult, 4)
+
 percen5, percen95 = percentile(wfa)
 meanwfa = meanz(wfa)
 vektorNpS = vektorS(percen5, meanwfa, percen95, counterpunc, postag)
