@@ -5,6 +5,7 @@ import json
 import math
 import re
 import string
+import os
 from pathlib import Path
 
 import matplotlib.pyplot as plt
@@ -21,7 +22,6 @@ from nltk.tokenize.punkt import PunktLanguageVars, PunktSentenceTokenizer
 from sklearn import datasets, ensemble
 from sklearn.metrics import mean_squared_error
 from sklearn.utils import shuffle
-
 
 #Tokenisasi data dan memfilter punctuation dan stopwords
 def Tokenisasi(text):
@@ -44,27 +44,35 @@ def Tokenisasi(text):
 
 #array 0
 def arrayzero(text, jdata, sentencez):
-  targetV = []
   sent_detector = PunktSentenceTokenizer(lang_vars = LangVars())
   count = 0
+  countKalimat = 0
+  countPos = 1
+  targetV = []
   arrayV = []
-  paragraph = text.split("\n\n")
   for i in range(len(sentencez)):
     targetV.append(0)
+  paragraph = text.split("\n\n")
   for para in paragraph:
     sentences = sent_detector.tokenize(para)
     for k in sentences:
-      if k.lower() == sentencez[len(sentencez)-1]:
+      countKalimat += 1
+      if countKalimat == len(sentencez):
         count += len(k)
       else:
         count += len(k)+1
         if sentences.index(k) == len(sentences)-1:
           count += 2
+      print(str(k) + ' ' + str(count))
       arrayV.append(count)
   # print(arrayV)
   for j in range(len(arrayV)):
     if arrayV[j] in jdata:
-      targetV[j] = 1
+      k = j
+      while k < len(arrayV):
+        targetV[k] = countPos
+        k += 1
+      countPos += 1
   return targetV
 
 #Membuat Vocab
@@ -180,7 +188,7 @@ def punctt(sentences):
     counterPunc[counter] = cp
     counter += 1
     nilai = FreqDist(cp).most_common(1)
-    if nilai[0][1]:
+    if nilai:
       counterPuncA.append(nilai[0][1])
     else:
       counterPuncA.append(0)
@@ -196,7 +204,10 @@ def postagg(sentences):
     count = len(re.findall(r'\w+', s))
     postTagFd = nltk.FreqDist(tag for (word, tag) in posT)
     pos = postTagFd.most_common(1)
-    nilai = pos[0][1]/count
+    if count:
+      nilai = pos[0][1]/count
+    else:
+      nilai = 0
     posTagA.append(nilai)
     counter += 1
   return posTagA
@@ -214,66 +225,75 @@ def vektorS(percen5, wfa, percen95, counterPuncA, posTagA):
     vektorS.append(vektorSa)
   return vektorS
 
+class LangVars(PunktLanguageVars):
+    sent_end_chars = ('.', '?', '!', '...', '-', '.)', '\n\n', '\n')
+
 #Memanggil Data
 corpus_root = 'D:\Education\SKRIPSI\pan18-style-change-detection-training-dataset-2018-01-31'
-DataCorpus = PlaintextCorpusReader(corpus_root,'.*txt')
-DataJson = PlaintextCorpusReader(corpus_root,'.*truth')
-fileTest = DataCorpus.open('problem-1.txt')
-text = fileTest.read()
-fileTest.close()
-print(text)
-# print(len(text))
-class LangVars(PunktLanguageVars):
-    sent_end_chars = ('.', '?', '!', '...', '-', '.)', '\n\n')
-jsonfile = DataJson.open('problem-1.truth')
-jsonstr = jsonfile.read()
-jdata = json.loads(jsonstr)['positions']
-sentences, cleanText = Tokenisasi(text)
-targetV = arrayzero(text, jdata, sentences)
-counterpunc = punctt(sentences)
-postag = postagg(sentences)
-#ctrl+/ untuk comment atau uncomment
-#1-gram
-# sorted_dict, result = freqWordDoc(cleanText, 1)
-# senResult =  freqWordSent(cleanText, 1)
-# wfa = wordFreq(result, sorted_dict, cleanText, senResult, 1)
+DataCorpus = [i for i in os.listdir(corpus_root) if i.endswith("txt")]
+DataJson = [i for i in os.listdir(corpus_root) if i.endswith("truth")]
+# DataCorpus = PlaintextCorpusReader(corpus_root,'.*txt')
+# DataJson = PlaintextCorpusReader(corpus_root,'.*truth')
+DataCorpus.sort()
+DataJson.sort()
+for i in range(2,3):
+  fileCoba = os.path.join(corpus_root, DataCorpus[i])
+  fileJson = os.path.join(corpus_root, DataJson[i])
+  fileTest = open(fileCoba, encoding="utf8")
+  text = fileTest.read()
+  fileTest.close()
+  # print(text)
+  # print(len(text))
+  print(DataCorpus[i])
+  jsonfile = open(fileJson)
+  jsonstr = jsonfile.read()
+  jdata = json.loads(jsonstr)['positions']
+  jsonfile.close()
+  sentences, cleanText = Tokenisasi(text)
+  targetV = arrayzero(text, jdata, sentences)
+  counterpunc = punctt(sentences)
+  postag = postagg(sentences)
+  #ctrl+/ untuk comment atau uncomment
+  #1-gram
+  # sorted_dict, result = freqWordDoc(cleanText, 1)
+  # senResult =  freqWordSent(cleanText, 1)
+  # wfa = wordFreq(result, sorted_dict, cleanText, senResult, 1)
 
-#3-gram
-sorted_dict, result = freqWordDoc(cleanText, 3)
-senResult =  freqWordSent(cleanText, 3)
-wfa = wordFreq(result, sorted_dict, cleanText, senResult, 3)
+  #3-gram
+  sorted_dict, result = freqWordDoc(cleanText, 3)
+  senResult =  freqWordSent(cleanText, 3)
+  wfa = wordFreq(result, sorted_dict, cleanText, senResult, 3)
 
-#4-gram
-# sorted_dict, result = freqWordDoc(cleanText, 4)
-# senResult =  freqWordSent(cleanText, 4)
-# wfa = wordFre q(result, sorted_dict, cleanText, senResult, 4)
+  #4-gram
+  # sorted_dict, result = freqWordDoc(cleanText, 4)
+  # senResult =  freqWordSent(cleanText, 4)
+  # wfa = wordFre q(result, sorted_dict, cleanText, senResult, 4)
 
-percen5, percen95 = percentile(wfa)
-meanwfa = meanz(wfa)
-vektorNpS = vektorS(percen5, meanwfa, percen95, counterpunc, postag)
-vektorNpS = np.array(vektorNpS)
-# print(vektorNpS)
-# print(targetV)
+  percen5, percen95 = percentile(wfa)
+  meanwfa = meanz(wfa)
+  vektorNpS = vektorS(percen5, meanwfa, percen95, counterpunc, postag)
+  vektorNpS = np.array(vektorNpS)
+  # print(vektorNpS)
+  # print(targetV)
 
-params = {'n_estimators': 500, 'max_depth': 4, 'min_samples_split': 2,
-          'learning_rate': 0.01, 'loss': 'ls'}
-clf = ensemble.GradientBoostingRegressor(**params)
+  params = {'n_estimators': 500, 'max_depth': 4, 'min_samples_split': 2,
+            'learning_rate': 0.01, 'loss': 'ls'}
+  clf = ensemble.GradientBoostingRegressor(**params)
 
-clf.fit(vektorNpS, targetV)
+  clf.fit(vektorNpS, targetV)
 
-# Plot feature importance
-feature_importance = clf.feature_importances_
-# make importances relative to max importance
-feature_importance = 100.0 * (feature_importance / feature_importance.max())
-sorted_idx = np.argsort(feature_importance)
-pos = np.array(['5% percentile', '50% percentile', '95% percentile', 'Punctuation', 'Tag'])
-plt.subplot(1, 2, 2)
-plt.barh(pos, feature_importance[sorted_idx], align='center')
-plt.yticks(pos)
-plt.xlabel('Relative Importance')
-plt.title('Variable Importance')
-plt.show()
+  # Plot feature importance
+  feature_importance = clf.feature_importances_
+  # make importances relative to max importance
+  feature_importance = 100.0 * (feature_importance / feature_importance.max())
+  sorted_idx = np.argsort(feature_importance)
+  pos = np.array(['5% percentile', '50% percentile', '95% percentile', 'Punctuation', 'Tag'])
+  plt.subplot(1, 2, 2)
+  plt.barh(pos, feature_importance[sorted_idx], align='center')
+  plt.yticks(pos)
+  plt.xlabel('Relative Importance')
+  plt.title('Variable Importance')
+  plt.show()
 
-
-# mse = mean_squared_error(y_test, clf.predict(X_test))
-# print("MSE: %.4f" % mse)
+  # mse = mean_squared_error(y_test, clf.predict(X_test))
+  # print("MSE: %.4f" % mse)
