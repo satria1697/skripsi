@@ -1,12 +1,14 @@
 #Import Library
 import collections
 import io
+import itertools
 import json
 import math
+import os
 import re
 import string
-import os
 from pathlib import Path
+from tqdm import tqdm
 
 import matplotlib.pyplot as plt
 import nltk
@@ -27,7 +29,6 @@ from sklearn.utils import shuffle
 def Tokenisasi(text):
   cleanText = []
   sentences = []
-  text = text.lower()
   sent_detector = PunktSentenceTokenizer(lang_vars = LangVars())
   para = text.split('\n\n')
   for paragraf in para:
@@ -35,44 +36,55 @@ def Tokenisasi(text):
       stopWords = set(stopwords.words('english'))
       for s in sentencess:
         sentences.append(s)
+        s = s.lower()
         tokens = word_tokenize(s)
         words = [word for word in tokens if word.isalpha()]
         words = [w for w in words if not w in stopWords]
         sente = " ".join(words)
         cleanText.append(sente)
+  # print(sentences)
   return sentences, cleanText
 
 #array 0
 def arrayzero(text, jdata, sentencez):
   sent_detector = PunktSentenceTokenizer(lang_vars = LangVars())
+  index = 0
   count = 0
+
   countKalimat = 0
-  countPos = 1
   targetV = []
   arrayV = []
-  for i in range(len(sentencez)):
-    targetV.append(0)
-  paragraph = text.split("\n\n")
-  for para in paragraph:
-    sentences = sent_detector.tokenize(para)
-    for k in sentences:
-      countKalimat += 1
-      if countKalimat == len(sentencez):
-        count += len(k)
-      else:
-        count += len(k)+1
-        if sentences.index(k) == len(sentences)-1:
-          count += 2
-      print(str(k) + ' ' + str(count))
-      arrayV.append(count)
-  # print(arrayV)
-  for j in range(len(arrayV)):
-    if arrayV[j] in jdata:
-      k = j
-      while k < len(arrayV):
-        targetV[k] = countPos
-        k += 1
-      countPos += 1
+  if len(jdata) == 0:
+    targetV = [0] * len(sentencez)
+  else:
+    targetV = [1] * len(sentencez)
+    # print(targetV)
+    # print(len(sentencez))
+    paragraph = text.split("\n\n")
+    for para in paragraph:
+      sentences = sent_detector.tokenize(para)
+      for k in sentences:
+        countKalimat += 1
+        if countKalimat == len(sentencez):
+          count += len(k)
+        else:
+          count += len(k)+1
+          if sentences.index(k) == len(sentences)-1:
+            count += 2
+        # print(str(k) + '=' + str(sentencez[index]))
+        index+=1
+        arrayV.append(count)
+    # print(arrayV)
+    countPos = 2
+    for j in range(len(arrayV)):
+      if arrayV[j] in jdata:
+        l = j
+        while l < len(arrayV):
+          # print(str(l) + ' ' + str(len(arrayV)))
+          targetV[l] = countPos
+          l += 1
+        countPos += 1
+    # print(targetV)
   return targetV
 
 #Membuat Vocab
@@ -226,17 +238,23 @@ def vektorS(percen5, wfa, percen95, counterPuncA, posTagA):
   return vektorS
 
 class LangVars(PunktLanguageVars):
-    sent_end_chars = ('.', '?', '!', '...', '-', '.)', '\n\n', '\n')
+    sent_end_chars = ('.', '?', '!', '...', '.)', '\n\n', '\n', '.\n')
 
-#Memanggil Data
 corpus_root = 'D:\Education\SKRIPSI\pan18-style-change-detection-training-dataset-2018-01-31'
+corpus_root_test = 'D:\Education\SKRIPSI\pan18-style-change-detection-test-dataset-2018-01-31'
+DataCorpusTest = [i for i in os.listdir(corpus_root) if i.endswith("txt")]
+DataJsonTest = [i for i in os.listdir(corpus_root) if i.endswith("truth")]
 DataCorpus = [i for i in os.listdir(corpus_root) if i.endswith("txt")]
 DataJson = [i for i in os.listdir(corpus_root) if i.endswith("truth")]
-# DataCorpus = PlaintextCorpusReader(corpus_root,'.*txt')
-# DataJson = PlaintextCorpusReader(corpus_root,'.*truth')
-DataCorpus.sort()
-DataJson.sort()
-for i in range(2,3):
+
+#inisialisasi data yang digunakan
+jumlahDataTraining = 100
+jumlahDataTest = 50
+
+#Pembuatan fitur Training
+sen = []
+target = []
+for i in tqdm(range(jumlahDataTraining)):
   fileCoba = os.path.join(corpus_root, DataCorpus[i])
   fileJson = os.path.join(corpus_root, DataJson[i])
   fileTest = open(fileCoba, encoding="utf8")
@@ -244,7 +262,7 @@ for i in range(2,3):
   fileTest.close()
   # print(text)
   # print(len(text))
-  print(DataCorpus[i])
+  # print(DataCorpus[i] + ' ' + DataJson[i])
   jsonfile = open(fileJson)
   jsonstr = jsonfile.read()
   jdata = json.loads(jsonstr)['positions']
@@ -276,24 +294,131 @@ for i in range(2,3):
   # print(vektorNpS)
   # print(targetV)
 
-  params = {'n_estimators': 500, 'max_depth': 4, 'min_samples_split': 2,
-            'learning_rate': 0.01, 'loss': 'ls'}
-  clf = ensemble.GradientBoostingRegressor(**params)
+  for i in range(len(vektorNpS)):
+    if i-2<0:
+      sen.append([0,0,0,0,0])
+    else:
+      sen.append(vektorNpS[i-2])
+    if i-1<0:
+      sen.append([0,0,0,0,0])
+    else:
+      sen.append(vektorNpS[i-1])
+    sen.append(vektorNpS[i])
+    if i+1>len(vektorNpS)-1:
+      sen.append([0,0,0,0,0])
+    else:
+      sen.append(vektorNpS[i+1])
+    if i+2>len(vektorNpS)-1:
+      sen.append([0,0,0,0,0])
+    else:
+      sen.append(vektorNpS[i+2])
+    # sen = np.array(sen)
+    # print(sen)
+    # target = np.append(target, np.full((5,1), targetV[i]))
+    # print(target)
+    # target = pd.DataFrame(target)
+    # clf.fit(sen, target.values.ravel())
+    target.append([targetV[i]]*5)
 
-  clf.fit(vektorNpS, targetV)
+#Pembuatan fitur test
+senTest = []
+targetTest = []
+for i in tqdm(range(jumlahDataTest)):
+  fileCoba = os.path.join(corpus_root_test, DataCorpusTest[i])
+  fileJson = os.path.join(corpus_root_test, DataJsonTest[i])
+  fileTest = open(fileCoba, encoding="utf8")
+  text = fileTest.read()
+  fileTest.close()
+  # print(text)
+  # print(len(text))
+  # print(DataCorpus[i] + ' ' + DataJson[i])
+  jsonfile = open(fileJson)
+  jsonstr = jsonfile.read()
+  jdata = json.loads(jsonstr)['positions']
+  jsonfile.close()
+  sentences, cleanText = Tokenisasi(text)
+  targetV = arrayzero(text, jdata, sentences)
+  counterpunc = punctt(sentences)
+  postag = postagg(sentences)
+  #ctrl+/ untuk comment atau uncomment
+  #1-gram
+  # sorted_dict, result = freqWordDoc(cleanText, 1)
+  # senResult =  freqWordSent(cleanText, 1)
+  # wfa = wordFreq(result, sorted_dict, cleanText, senResult, 1)
 
-  # Plot feature importance
-  feature_importance = clf.feature_importances_
-  # make importances relative to max importance
-  feature_importance = 100.0 * (feature_importance / feature_importance.max())
-  sorted_idx = np.argsort(feature_importance)
-  pos = np.array(['5% percentile', '50% percentile', '95% percentile', 'Punctuation', 'Tag'])
-  plt.subplot(1, 2, 2)
-  plt.barh(pos, feature_importance[sorted_idx], align='center')
-  plt.yticks(pos)
-  plt.xlabel('Relative Importance')
-  plt.title('Variable Importance')
-  plt.show()
+  #3-gram
+  sorted_dict, result = freqWordDoc(cleanText, 3)
+  senResult =  freqWordSent(cleanText, 3)
+  wfa = wordFreq(result, sorted_dict, cleanText, senResult, 3)
 
-  # mse = mean_squared_error(y_test, clf.predict(X_test))
-  # print("MSE: %.4f" % mse)
+  #4-gram
+  # sorted_dict, result = freqWordDoc(cleanText, 4)
+  # senResult =  freqWordSent(cleanText, 4)
+  # wfa = wordFre q(result, sorted_dict, cleanText, senResult, 4)
+
+  percen5, percen95 = percentile(wfa)
+  meanwfa = meanz(wfa)
+  vektorNpS = vektorS(percen5, meanwfa, percen95, counterpunc, postag)
+  vektorNpS = np.array(vektorNpS)
+  # print(vektorNpS)
+  # print(targetV)
+
+  for i in range(len(vektorNpS)):
+    if i-2<0:
+      senTest.append([0,0,0,0,0])
+    else:
+      senTest.append(vektorNpS[i-2])
+    if i-1<0:
+      senTest.append([0,0,0,0,0])
+    else:
+      senTest.append(vektorNpS[i-1])
+    senTest.append(vektorNpS[i])
+    if i+1>len(vektorNpS)-1:
+      senTest.append([0,0,0,0,0])
+    else:
+      senTest.append(vektorNpS[i+1])
+    if i+2>len(vektorNpS)-1:
+      senTest.append([0,0,0,0,0])
+    else:
+      senTest.append(vektorNpS[i+2])
+    # sen = np.array(sen)
+    # print(sen)
+    # target = np.append(target, np.full((5,1), targetV[i]))
+    # print(target)
+    # target = pd.DataFrame(target)
+    # clf.fit(sen, target.values.ravel())
+    targetTest.append([targetV[i]]*5)
+
+params = {'n_estimators': 500, 'max_depth': 4, 'min_samples_split': 2, 'learning_rate': 0.01, 'loss': 'ls'}
+clf = ensemble.GradientBoostingRegressor(**params)
+
+X_train = np.array(sen)
+y_train = np.array(target)
+# print(X_train)
+# print(y_train)
+y_train = pd.DataFrame(y_train)
+X_test = np.array(senTest)
+y_test = np.array(targetTest)
+# print(X_train)
+# print(y_test)
+y_test = pd.DataFrame(y_test)
+clf.fit(X_train, y_train.values.ravel())
+
+# Plot feature importance
+feature_importance = clf.feature_importances_
+# make importances relative to max importance
+feature_importance = 100.0 * (feature_importance / feature_importance.max())
+sorted_idx = np.argsort(feature_importance)
+pos = np.arange(sorted_idx.shape[0]) + .5
+tagging = np.array(['5% percentile', '50% percentile', '95% percentile', 'Punctuation', 'Tag'])
+plt.subplot(1, 2, 2)
+plt.barh(pos, feature_importance[sorted_idx], align='center')
+plt.yticks(pos, tagging[sorted_idx])
+plt.xlabel('Relative Importance')
+plt.title('Variable Importance')
+plt.show()
+
+mse = mean_squared_error(y_test.values.ravel(), clf.predict(X_test))
+print('\nMSE: %.4f' % mse)
+
+print('score: ' + str(clf.score(X_test, y_test.values.ravel())))
