@@ -8,7 +8,6 @@ import os
 import re
 import string
 from pathlib import Path
-from tqdm import tqdm
 
 import matplotlib.pyplot as plt
 import nltk
@@ -24,6 +23,8 @@ from nltk.tokenize.punkt import PunktLanguageVars, PunktSentenceTokenizer
 from sklearn import datasets, ensemble
 from sklearn.metrics import mean_squared_error
 from sklearn.utils import shuffle
+from sklearn.ensemble import RandomForestRegressor
+from tqdm import tqdm
 
 #Tokenisasi data dan memfilter punctuation dan stopwords
 def Tokenisasi(text):
@@ -295,30 +296,33 @@ for i in tqdm(range(jumlahDataTraining)):
   # print(targetV)
 
   for i in range(len(vektorNpS)):
+    senS = []
     if i-2<0:
-      sen.append([0,0,0,0,0])
+      senS.append([0,0,0,0,0])
     else:
-      sen.append(vektorNpS[i-2])
+      senS.append(vektorNpS[i-2])
     if i-1<0:
-      sen.append([0,0,0,0,0])
+      senS.append([0,0,0,0,0])
     else:
-      sen.append(vektorNpS[i-1])
-    sen.append(vektorNpS[i])
+      senS.append(vektorNpS[i-1])
+    senS.append(vektorNpS[i])
     if i+1>len(vektorNpS)-1:
-      sen.append([0,0,0,0,0])
+      senS.append([0,0,0,0,0])
     else:
-      sen.append(vektorNpS[i+1])
+      senS.append(vektorNpS[i+1])
     if i+2>len(vektorNpS)-1:
-      sen.append([0,0,0,0,0])
+      senS.append([0,0,0,0,0])
     else:
-      sen.append(vektorNpS[i+2])
-    # sen = np.array(sen)
-    # print(sen)
+      senS.append(vektorNpS[i+2])
+    # senS = np.array(senS)
+    # print(senS)
     # target = np.append(target, np.full((5,1), targetV[i]))
     # print(target)
     # target = pd.DataFrame(target)
     # clf.fit(sen, target.values.ravel())
-    target.append([targetV[i]]*5)
+    senS = np.mean(senS, axis=0)
+    sen.append(senS)
+    target.append([targetV[i]])
 
 #Pembuatan fitur test
 senTest = []
@@ -364,46 +368,50 @@ for i in tqdm(range(jumlahDataTest)):
   # print(targetV)
 
   for i in range(len(vektorNpS)):
+    senTestS = []
     if i-2<0:
-      senTest.append([0,0,0,0,0])
+      senTestS.append([0,0,0,0,0])
     else:
-      senTest.append(vektorNpS[i-2])
+      senTestS.append(vektorNpS[i-2])
     if i-1<0:
-      senTest.append([0,0,0,0,0])
+      senTestS.append([0,0,0,0,0])
     else:
-      senTest.append(vektorNpS[i-1])
-    senTest.append(vektorNpS[i])
+      senTestS.append(vektorNpS[i-1])
+    senTestS.append(vektorNpS[i])
     if i+1>len(vektorNpS)-1:
-      senTest.append([0,0,0,0,0])
+      senTestS.append([0,0,0,0,0])
     else:
-      senTest.append(vektorNpS[i+1])
+      senTestS.append(vektorNpS[i+1])
     if i+2>len(vektorNpS)-1:
-      senTest.append([0,0,0,0,0])
+      senTestS.append([0,0,0,0,0])
     else:
-      senTest.append(vektorNpS[i+2])
+      senTestS.append(vektorNpS[i+2])
     # sen = np.array(sen)
     # print(sen)
     # target = np.append(target, np.full((5,1), targetV[i]))
     # print(target)
     # target = pd.DataFrame(target)
     # clf.fit(sen, target.values.ravel())
-    targetTest.append([targetV[i]]*5)
+    senTestS = np.mean(senTestS, axis=0)
+    senTest.append(senTestS)
+    targetTest.append([targetV[i]])
 
-params = {'n_estimators': 500, 'max_depth': 4, 'min_samples_split': 2, 'learning_rate': 0.01, 'loss': 'ls'}
-clf = ensemble.GradientBoostingRegressor(**params)
+params = {'n_estimators': 200, 'max_depth': 4}
 
 X_train = np.array(sen)
 y_train = np.array(target)
 # print(X_train)
 # print(y_train)
-y_train = pd.DataFrame(y_train)
+y_train = pd.DataFrame(y_train).values.ravel()
 X_test = np.array(senTest)
 y_test = np.array(targetTest)
 # print(X_train)
 # print(y_test)
-y_test = pd.DataFrame(y_test)
-clf.fit(X_train, y_train.values.ravel())
+y_test = pd.DataFrame(y_test).values.ravel()
 
+print('Gradient Boosting Regressor')
+clf = ensemble.GradientBoostingRegressor(**params)
+clf.fit(X_train, y_train)
 # Plot feature importance
 feature_importance = clf.feature_importances_
 # make importances relative to max importance
@@ -417,8 +425,26 @@ plt.yticks(pos, tagging[sorted_idx])
 plt.xlabel('Relative Importance')
 plt.title('Variable Importance')
 plt.show()
-
-mse = mean_squared_error(y_test.values.ravel(), clf.predict(X_test))
-print('\nMSE: %.4f' % mse)
-
-print('score: ' + str(clf.score(X_test, y_test.values.ravel())))
+mse = mean_squared_error(y_test, clf.predict(X_test))
+print('MSE: %.4f' % mse)
+print('Score: %.4f' % clf.score(X_test, y_test))
+print('-------------------------------------------')
+print('\nRandom Forest Regressor')
+regressor = RandomForestRegressor(**params)
+regressor.fit(X_train, y_train)
+# Plot feature importance
+feature_importance = regressor.feature_importances_
+# make importances relative to max importance
+feature_importance = 100.0 * (feature_importance / feature_importance.max())
+sorted_idx = np.argsort(feature_importance)
+pos = np.arange(sorted_idx.shape[0]) + .5
+tagging = np.array(['5% percentile', '50% percentile', '95% percentile', 'Punctuation', 'Tag'])
+plt.subplot(1, 2, 2)
+plt.barh(pos, feature_importance[sorted_idx], align='center')
+plt.yticks(pos, tagging[sorted_idx])
+plt.xlabel('Relative Importance')
+plt.title('Variable Importance')
+plt.show()
+mse = mean_squared_error(y_test, regressor.predict(X_test))
+print('MSE: %.4f' % mse)
+print('Score: %.4f' % regressor.score(X_test, y_test))
