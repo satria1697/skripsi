@@ -346,7 +346,6 @@ for i in tqdm(range(jumlahData)):
   # print(vektorNpS)
   # print(targetV)
 
-  begone = []
   for j in range(len(vektorNpS)):
     senS = []
     if j-2<0:
