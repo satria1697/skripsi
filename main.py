@@ -49,7 +49,7 @@ def Tokenisasi(text):
   return sentences, cleanText
 
 #array 0
-def arrayzero(text, jdata, sentencez):
+def arrayzero(text, jdata, sentencez, authorZ):
   sent_detector = PunktSentenceTokenizer(lang_vars = LangVars())
   index = 0
   count = 0
@@ -57,35 +57,44 @@ def arrayzero(text, jdata, sentencez):
   countKalimat = 0
   targetV = []
   arrayV = []
-  if jdata:
-    targetV = [1] * len(sentencez)
-  else:
+  if not jdata:
     targetV = [0] * len(sentencez)
+  else:
+    if authorZ[0] == '1':
+      targetV = [0] * len(sentencez)
+    else:
+      targetV = [1] * len(sentencez)
     # print(targetV)
     # print(len(sentencez))
-    # paragraph = text.split("\n\n")
-    # for para in paragraph:
-    #   sentences = sent_detector.tokenize(para)
-    #   for k in sentences:
-    #     countKalimat += 1
-    #     if countKalimat == len(sentencez):
-    #       count += len(k)
-    #     else:
-    #       count += len(k)+1
-    #       if sentences.index(k) == len(sentences)-1:
-    #         count += 2
-    #     # print(str(k) + '=' + str(sentencez[index]))
-    #     index+=1
-    #     arrayV.append(count)
+    paragraph = text.split("\n\n")
+    for para in paragraph:
+      sentences = sent_detector.tokenize(para)
+      for k in sentences:
+        countKalimat += 1
+        if countKalimat == len(sentencez):
+          count += len(k)
+        else:
+          count += len(k)+1
+          if sentences.index(k) == len(sentences)-1:
+            count += 2
+        # print(str(k) + '=' + str(sentencez[index]))
+        index+=1
+        arrayV.append(count)
     # print(arrayV)
-    # for j in range(len(arrayV)):
-    #   if arrayV[j] in jdata:
-    #     l = j
-    #     while l < len(arrayV):
-    #       # print(str(geser) + ' ' + str(len(authorz)))
-    #       targetV[l] = authorz[geser]
-    #       l += 1
-    #     geser += 1
+    for j in range(len(arrayV)):
+      if arrayV[j] in jdata:
+        l = j
+        if authorZ[geser] == '1':
+          while l < len(arrayV):
+            # print(str(geser) + ' ' + str(len(authorz)))
+            targetV[l] = 0
+            l += 1
+        else:
+          while l < len(arrayV):
+            # print(str(geser) + ' ' + str(len(authorz)))
+            targetV[l] = 1
+            l += 1
+        geser += 1
     # print(targetV)
   return targetV
 
@@ -292,18 +301,32 @@ DataJson = natsort.natsorted(DataJson)
 DataCorpusTest = natsort.natsorted(DataCorpusTest)
 DataJsonTest = natsort.natsorted(DataJsonTest)
 
+# metaData = pd.read_csv('train_meta.csv')
+metaData = pd.read_csv('validation_meta.csv')
+author = metaData.mixMethod
+author = author.values
+authorZ = []
+for penulis in author:
+  authorS = penulis.split('-')
+  authorZZ = []
+  for penu in authorS:
+    authorZZ.append(penu.replace('A',''))
+  authorZ.append(authorZZ)
+# print(authorZ)
+
 #inisialisasi data yang digunakan
-jumlahData = len(DataCorpus)
+jumlahData = len(DataCorpusTest)
 
 #Pembuatan fitur
-sen = []
-target = []
-begone = []
+# sen = []
+# target = []
 for i in tqdm(range(jumlahData)):
-  # sen = []
-  # target = []
-  fileCoba = os.path.join(corpus_root, DataCorpus[i])
-  fileJson = os.path.join(corpus_root, DataJson[i])
+  sen = []
+  target = []
+  # fileCoba = os.path.join(corpus_root, DataCorpus[i])
+  # fileJson = os.path.join(corpus_root, DataJson[i])
+  fileCoba = os.path.join(corpus_root_test, DataCorpusTest[i])
+  fileJson = os.path.join(corpus_root_test, DataJsonTest[i])
 
   fileTest = open(fileCoba, encoding="utf8")
   text = fileTest.read()
@@ -316,6 +339,8 @@ for i in tqdm(range(jumlahData)):
   jsonstr = jsonfile.read()
   jdata = json.loads(jsonstr)['positions']
   jsonfile.close()
+
+  authorZe = authorZ[i]
 
   sentences, cleanText = Tokenisasi(text)
   lexScore = lexi(cleanText)
@@ -340,7 +365,7 @@ for i in tqdm(range(jumlahData)):
 
   percen5, percen95 = percentile(wfa)
   meanwfa = meanz(wfa)
-  targetV = arrayzero(text, jdata, sentences)
+  targetV = arrayzero(text, jdata, sentences, authorZe)
   vektorNpS = vektorS(percen5, meanwfa, percen95, counterpunc, postag, lexScore)
   vektorNpS = np.array(vektorNpS)
   # print(vektorNpS)
@@ -375,10 +400,10 @@ for i in tqdm(range(jumlahData)):
     sen.append(senS)
     target.append([targetV[j]])
   bgone = np.concatenate((sen,target), axis=1)
-  # # print(bgone)
-  # df = pd.DataFrame(bgone)
-  # df.to_csv(r'D:\Education\SKRIPSI\validation\3-gram\problem-'+str(i+1)+'.csv')
-  # # print(sen)
-bgone = np.concatenate((sen,target), axis=1)
-df = pd.DataFrame(bgone)
-df.to_csv('training-4-gram.csv')
+  # print(bgone)
+  df = pd.DataFrame(bgone)
+  df.to_csv(r'D:\Education\SKRIPSI\PYTHON\validation\4-gram\problem-'+str(i+1)+'.csv')
+  # print(sen)
+# bgone = np.concatenate((sen,target), axis=1)
+# df = pd.DataFrame(bgone)
+# df.to_csv('training-4-gram.csv')

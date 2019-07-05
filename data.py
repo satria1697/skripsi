@@ -11,15 +11,15 @@ import natsort
 from tqdm import tqdm
 
 df = pd.read_csv('training-3-gram.csv')
-X = df.iloc[:, 0:30]
-y = df.iloc[:, 30:]
+X = df.iloc[:, 1:31]
+y = df.iloc[:, 31:]
 X_train = np.array(X)
 y_train = np.array(y)
 # print(X)
 # print(y)
 # X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
 
-testData = 'D:\Education\SKRIPSI\\PYTHON\\validation\\3-gram'
+testData = 'D:\Education\SKRIPSI\\PYTHON\\skripsi\\validation\\3-gram'
 DataTest = [i for i in os.listdir(testData) if i.endswith("csv")]
 DataTest = natsort.natsorted(DataTest)
 
@@ -48,7 +48,7 @@ for i in tqdm(range(jumlahData)):
   # plt.xlabel('sentence')
   # plt.show()
 
-for data in predictionGG[:5]:
+for data in predictionGG[:10]:
   plt.subplot(211)
   plt.plot(range(len(data)), data)
   plt.xlabel('sentence')
