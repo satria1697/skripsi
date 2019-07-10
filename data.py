@@ -15,18 +15,15 @@ X = df.iloc[:, 1:31]
 y = df.iloc[:, 31:]
 X_train = np.array(X)
 y_train = np.array(y)
-# print(X)
-# print(y)
-# X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
 
-testData = 'D:\Education\SKRIPSI\\PYTHON\\skripsi\\validation\\3-gram'
+gbr = GradientBoostingRegressor(n_estimators=200, max_depth=4, verbose=0)
+gbr.fit(X_train, y_train)
+
+testData = 'D:\Education\SKRIPSI\\PYTHON\\skripsi\\validation\\1-vektor\\3-gram'
 DataTest = [i for i in os.listdir(testData) if i.endswith("csv")]
 DataTest = natsort.natsorted(DataTest)
 
 jumlahData = len(DataTest)
-
-gbr = GradientBoostingRegressor(n_estimators=200, max_depth=4, verbose=0)
-gbr.fit(X_train, y_train)
 
 predictionGG = []
 for i in tqdm(range(jumlahData)):
@@ -53,16 +50,3 @@ for data in predictionGG[:10]:
   plt.plot(range(len(data)), data)
   plt.xlabel('sentence')
   plt.show()
-
-# lr = LogisticRegression(verbose=2)
-# lr.fit(X_train, y_train)
-# predictionL = []
-# for data in X_test:
-#   data = data.reshape(1,-1)
-#   y_pred = lr.predict(data)
-#   predictionL.append(y_pred)
-# print(predictionL)
-
-# sv = svm.SVC(kernel='linear', verbose=1, gamma='scale')
-# sv.fit(X_train, y_train)
-# print(sv.predict(X_test))

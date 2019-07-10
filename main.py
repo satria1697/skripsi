@@ -301,8 +301,8 @@ DataJson = natsort.natsorted(DataJson)
 DataCorpusTest = natsort.natsorted(DataCorpusTest)
 DataJsonTest = natsort.natsorted(DataJsonTest)
 
-# metaData = pd.read_csv('train_meta.csv')
-metaData = pd.read_csv('validation_meta.csv')
+metaData = pd.read_csv('train_meta.csv')
+# metaData = pd.read_csv('validation_meta.csv')
 author = metaData.mixMethod
 author = author.values
 authorZ = []
@@ -315,18 +315,19 @@ for penulis in author:
 # print(authorZ)
 
 #inisialisasi data yang digunakan
-jumlahData = len(DataCorpusTest)
+jumlahData = len(DataCorpus)
+# jumlahData = len(DataCorpusTest)
 
 #Pembuatan fitur
-# sen = []
-# target = []
+sen = []
+target = []
 for i in tqdm(range(jumlahData)):
-  sen = []
-  target = []
-  # fileCoba = os.path.join(corpus_root, DataCorpus[i])
-  # fileJson = os.path.join(corpus_root, DataJson[i])
-  fileCoba = os.path.join(corpus_root_test, DataCorpusTest[i])
-  fileJson = os.path.join(corpus_root_test, DataJsonTest[i])
+  # sen = []
+  # target = []
+  fileCoba = os.path.join(corpus_root, DataCorpus[i])
+  fileJson = os.path.join(corpus_root, DataJson[i])
+  # fileCoba = os.path.join(corpus_root_test, DataCorpusTest[i])
+  # fileJson = os.path.join(corpus_root_test, DataJsonTest[i])
 
   fileTest = open(fileCoba, encoding="utf8")
   text = fileTest.read()
@@ -353,15 +354,20 @@ for i in tqdm(range(jumlahData)):
   # senResult =  freqWordSent(cleanText, 1)
   # wfa = wordFreq(result, sorted_dict, cleanText, senResult, 1)
 
+  #2-gram
+  sorted_dict, result = freqWordDoc(cleanText, 2)
+  senResult =  freqWordSent(cleanText, 2)
+  wfa = wordFreq(result, sorted_dict, cleanText, senResult, 2)
+
   #3-gram
   # sorted_dict, result = freqWordDoc(cleanText, 3)
   # senResult =  freqWordSent(cleanText, 3)
   # wfa = wordFreq(result, sorted_dict, cleanText, senResult, 3)
 
   #4-gram
-  sorted_dict, result = freqWordDoc(cleanText, 4)
-  senResult =  freqWordSent(cleanText, 4)
-  wfa = wordFreq(result, sorted_dict, cleanText, senResult, 4)
+  # sorted_dict, result = freqWordDoc(cleanText, 4)
+  # senResult =  freqWordSent(cleanText, 4)
+  # wfa = wordFreq(result, sorted_dict, cleanText, senResult, 4)
 
   percen5, percen95 = percentile(wfa)
   meanwfa = meanz(wfa)
@@ -373,6 +379,10 @@ for i in tqdm(range(jumlahData)):
 
   for j in range(len(vektorNpS)):
     senS = []
+    if j-3<0:
+      senS.append([0,0,0,0,0,0])
+    else:
+      senS.append(vektorNpS[j-3])
     if j-2<0:
       senS.append([0,0,0,0,0,0])
     else:
@@ -390,6 +400,10 @@ for i in tqdm(range(jumlahData)):
       senS.append([0,0,0,0,0,0])
     else:
       senS.append(vektorNpS[j+2])
+    if j+3>len(vektorNpS)-1:
+      senS.append([0,0,0,0,0,0])
+    else:
+      senS.append(vektorNpS[j+3])
     # senS = np.array(senS)
     # print(senS)
     # target = np.append(target, np.full((5,1), targetV[i]))
@@ -399,11 +413,9 @@ for i in tqdm(range(jumlahData)):
     senS = np.concatenate(senS, axis=None)
     sen.append(senS)
     target.append([targetV[j]])
-  bgone = np.concatenate((sen,target), axis=1)
-  # print(bgone)
-  df = pd.DataFrame(bgone)
-  df.to_csv(r'D:\Education\SKRIPSI\PYTHON\validation\4-gram\problem-'+str(i+1)+'.csv')
-  # print(sen)
-# bgone = np.concatenate((sen,target), axis=1)
-# df = pd.DataFrame(bgone)
-# df.to_csv('training-4-gram.csv')
+  # bgone = np.concatenate((sen,target), axis=1)
+  # df = pd.DataFrame(bgone)
+  # df.to_csv(r'D:\Education\SKRIPSI\PYTHON\skripsi\validation\1-vektor\2-gram\problem-'+str(i+1)+'.csv')
+bgone = np.concatenate((sen,target), axis=1)
+df = pd.DataFrame(bgone)
+df.to_csv('training-3-vektor-4-gram.csv')
