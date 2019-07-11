@@ -418,4 +418,4 @@ for i in tqdm(range(jumlahData)):
   # df.to_csv(r'D:\Education\SKRIPSI\PYTHON\skripsi\validation\1-vektor\2-gram\problem-'+str(i+1)+'.csv')
 bgone = np.concatenate((sen,target), axis=1)
 df = pd.DataFrame(bgone)
-df.to_csv('training-3-vektor-4-gram.csv')
+df.to_csv('training-3-vektor-2-gram.csv')

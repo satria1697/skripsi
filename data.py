@@ -9,44 +9,64 @@ import matplotlib.pyplot as plt
 import os
 import natsort
 from tqdm import tqdm
+from tqdm import trange
 
-df = pd.read_csv('training-3-gram.csv')
-X = df.iloc[:, 1:31]
-y = df.iloc[:, 31:]
-X_train = np.array(X)
-y_train = np.array(y)
+for i in trange(1,4):
+  for j in trange(2,5):
+    df = pd.read_csv('training-' + str(i) + '-vektor-' + str(j) + '-gram.csv')
+    if i == 1:
+      X = df.iloc[:, 1:18]
+      y = df.iloc[:, 18]
+    if i == 2:
+      X = df.iloc[:, 1:31]
+      y = df.iloc[:, 31]
+    if i == 3:
+      X = df.iloc[:, 1:42]
+      y = df.iloc[:, 42]
+    X_train = np.array(X)
+    y_train = np.array(y)
 
-gbr = GradientBoostingRegressor(n_estimators=200, max_depth=4, verbose=0)
-gbr.fit(X_train, y_train)
+    gbr = GradientBoostingRegressor(n_estimators=200, max_depth=4, verbose=0)
+    gbr.fit(X_train, y_train)
+    
+    testData = 'D:\Education\SKRIPSI\\PYTHON\\skripsi\\validation\\' + str(i) +'-vektor\\' + str(j) + '-gram'
+    DataTest = [f for f in os.listdir(testData) if f.endswith("csv")]
+    DataTest = natsort.natsorted(DataTest)
 
-testData = 'D:\Education\SKRIPSI\\PYTHON\\skripsi\\validation\\1-vektor\\3-gram'
-DataTest = [i for i in os.listdir(testData) if i.endswith("csv")]
-DataTest = natsort.natsorted(DataTest)
+    jumlahData = len(DataTest)
 
-jumlahData = len(DataTest)
+    predictionGG = []
+    for g in trange(jumlahData):
+      csvfile = os.path.join(testData,DataTest[g])
+      df = pd.read_csv(csvfile)
+      if i == 1:
+        X = df.iloc[:, 1:18]
+        y = df.iloc[:, 18]
+      if i == 2:
+        X = df.iloc[:, 1:31]
+        y = df.iloc[:, 31]
+      if i == 3:
+        X = df.iloc[:, 1:42]
+        y = df.iloc[:, 42]
 
-predictionGG = []
-for i in tqdm(range(jumlahData)):
-  csvfile = os.path.join(testData,DataTest[i])
-  df = pd.read_csv(csvfile)
-  X = df.iloc[:, 0:30]
-  y = df.iloc[:, 30:]
-  X_test = np.array(X)
-  y_test = np.array(y)
-  predictionG = []
-  for data in X_test:
-    data = data.reshape(1,-1)
-    y_pred = gbr.predict(data)
-    predictionG.append(y_pred)
-  predictionGG.append(predictionG)
-  # np.asarray(predictionG)
-  # plt.subplot(211)
-  # plt.plot(range(len(predictionG)), predictionG)
-  # plt.xlabel('sentence')
-  # plt.show()
+      X_test = np.array(X)
+      y_test = np.array(y)
+      predictionG = []
 
-for data in predictionGG[:10]:
-  plt.subplot(211)
-  plt.plot(range(len(data)), data)
-  plt.xlabel('sentence')
-  plt.show()
+      for data in X_test:
+        data = data.reshape(1,-1)
+        y_pred = gbr.predict(data)
+        predictionG.append(y_pred)
+      predictionGG.append(predictionG)
+      
+      # np.asarray(predictionG)
+      # plt.subplot(211)
+      # plt.plot(range(len(predictionG)), predictionG)
+      # plt.xlabel('sentence')
+      # plt.show()
+
+    for data in predictionGG[:3]:
+      plt.subplot(211)
+      plt.plot(range(len(data)), data)
+      plt.xlabel('sentence')
+      plt.show()
