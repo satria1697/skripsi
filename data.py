@@ -58,15 +58,20 @@ for i in trange(1,4):
         y_pred = gbr.predict(data)
         predictionG.append(y_pred)
       predictionGG.append(predictionG)
-      
+
       # np.asarray(predictionG)
       # plt.subplot(211)
       # plt.plot(range(len(predictionG)), predictionG)
       # plt.xlabel('sentence')
       # plt.show()
 
-    for data in predictionGG[:3]:
+    pos = 0
+    for data in predictionGG:
+      pos += 1
       plt.subplot(211)
       plt.plot(range(len(data)), data)
+      plt.title('problem-' + str(pos))
       plt.xlabel('sentence')
-      plt.show()
+      plt.savefig('D:\Education\SKRIPSI\\figur\\' + str(i) +'-vektor\\' + str(j) + '-gram\\problem' + str(pos))
+      plt.close()
+      # plt.show()
